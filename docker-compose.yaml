@@ -1,0 +1,26 @@
+version: "3.8"
+
+services: 
+    backend:
+        build: .
+        command: "gunicorn --bind 0.0.0.0:8000 main:app -w 1 -k uvicorn.workers.UvicornWorker"
+        volumes: 
+            - .:/code
+        ports: 
+            - 8000:8000
+        depends_on: 
+            - DB
+    DB:
+        image: postgres:12
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=admin
+
+        volumes: 
+            - postgres_data:/var/lib/postgresql/data/
+
+        ports:
+            - 5432:5432
+
+volumes: 
+    postgres_data:
