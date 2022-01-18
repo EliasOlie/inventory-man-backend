@@ -28,22 +28,17 @@ class User:
         self.email_verified = False
         
     def db_obj_repr(self) -> object:
-
         attr = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         useds = [a for a in attr if not(a[0].startswith('__') and a[0].endswith('__'))]
         usr_obj = {}
         for used in useds:
-            if useds.index(used) == len(useds)-1:
-                usr_obj[f"{used[0]}"] = used[1]
-               
-            else:
-                usr_obj[f"{used[0]}"] = used[1]
+            usr_obj[f"{used[0]}"] = used[1]
         
         usr_obj['user_id'] = str(usr_obj['user_id'])
-        usr_obj = json.dumps(usr_obj, default=str)
+        usr_obj = json.dumps(usr_obj, default=str, ensure_ascii=False)
 
         return usr_obj
     
 if __name__ == '__main__':
     test = User('elias', 'e@.cm', '1234', 'ETC')
-    print(test.db_user_repr())
+    print(test.db_obj_repr())

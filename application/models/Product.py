@@ -19,11 +19,7 @@ class Product:
         useds = [a for a in attr if not(a[0].startswith('__') and a[0].endswith('__'))]
         usr_obj = {}
         for used in useds:
-            if useds.index(used) == len(useds)-1:
-                usr_obj[f"{used[0]}"] = used[1]
-               
-            else:
-                usr_obj[f"{used[0]}"] = used[1]
+            usr_obj[f"{used[0]}"] = used[1]
 
         usr_obj = json.dumps(usr_obj, default=str, ensure_ascii=False)
 
@@ -31,5 +27,5 @@ class Product:
 
 if __name__ == '__main__':
     p1 = Product('bc62118e-3743-4b19-9262-cfe92822a74a','EPDV', 100.0, 1, "Serviço")
-    
+    print(p1.product_description)
     print(p1.db_obj_repr())
