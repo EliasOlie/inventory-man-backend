@@ -13,4 +13,4 @@ EXPOSE 80
 
 COPY . .
 
-CMD [ "uvicorn main:app" ]
+CMD [ "python3", "wsgi.py" ]
