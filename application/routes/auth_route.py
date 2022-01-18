@@ -1,18 +1,18 @@
 from datetime import datetime, timedelta
-from decouple import config
 from fastapi import APIRouter
 from fastapi.param_functions import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from hashlib import sha256
 import jwt
 from passlib.context import CryptContext
+import os
 
 from application.api_security.auth import check
 from application.models.ApiAuthSchema import Auth
 from application.models.Response import Response
 from infrastructure.DB import DB
 
-JWT_SECRET = config('TOKEN_SECRET') 
+JWT_SECRET = os.getenv('TOKEN_SECRET') 
 
 router = APIRouter(
     tags=['Security'],

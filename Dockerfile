@@ -13,4 +13,4 @@ EXPOSE 80
 
 COPY . .
 
-CMD [ "python" ]
+CMD [ "python3", "wsgi.py" ]

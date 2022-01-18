@@ -9,7 +9,7 @@ class Database:
         self.db_host = db_host
         self.db_password = db_password
         self.data_fetched = None
-        self.conn = psycopg2.connect(database=self.db_name, user=self.db_user, host=self.db_host, password=self.db_password)
+        self.conn = psycopg2.connect(database=self.db_name, user=self.db_user, host=self.db_host, password=self.db_password, sslmode='require')
 
     def insert(self, table, data):
         with self.conn:
