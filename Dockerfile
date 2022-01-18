@@ -13,4 +13,4 @@ EXPOSE 80
 
 COPY . .
 
-CMD [ "python" ]
+CMD [ "uvicorn main:app" ]
