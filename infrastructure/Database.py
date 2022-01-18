@@ -3,11 +3,13 @@ import psycopg2
 
 class Database:
     
-    def __init__(self, db_host) -> None:
+    def __init__(self, db_name, db_user, db_host, db_password) -> None:
+        self.db_name = db_name
+        self.db_user = db_user
         self.db_host = db_host
-
+        self.db_password = db_password
         self.data_fetched = None
-        self.conn = psycopg2.connect(self.db_host, sslmode='require')
+        self.conn = psycopg2.connect(database=self.db_name, user=self.db_user, host=self.db_host, password=self.db_password, sslmode='require'
 
     def insert(self, table, data):
         with self.conn:
