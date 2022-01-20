@@ -1,2 +1,0 @@
-Response object is not subscritable é provavelmente falta error de autenticação, checar header e token
-da req!
