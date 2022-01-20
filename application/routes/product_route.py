@@ -114,6 +114,7 @@ def get_history(u:AuthRes = Depends(auth_handler.auth_wrapper)):
 @router.post('/product/{id}/entry') #<- Bugando atualizando todos :p
 def registrar_entrada(id, c: ProductOperation, u:AuthRes = Depends(auth_handler.auth_wrapper)):
     product = DB.read_one('products', f"product_id = '{id}'", _json=True)
+    amount = product['product_amount']
     if u['user_company'] == product['product_belongs']:
         transaction = DB.update('products', 'product_amount', amount+int(c.value), f"product_id = '{id}'")
     
