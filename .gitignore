@@ -4,3 +4,6 @@ venv
 #Local test files
 local_test.py
 settings.ini
+Response.py
+test.py
+unused.txt

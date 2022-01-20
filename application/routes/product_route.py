@@ -115,7 +115,6 @@ def get_history(u:AuthRes = Depends(auth_handler.auth_wrapper)):
 def registrar_entrada(id, c: ProductOperation, u:AuthRes = Depends(auth_handler.auth_wrapper)):
     product = DB.read_one('products', f"product_id = '{id}'", _json=True)
     if u['user_company'] == product['product_belongs']:
-        amount = product['product_amount']
         transaction = DB.update('products', 'product_amount', amount+int(c.value), f"product_id = '{id}'")
     
     if transaction == 0: 
@@ -143,7 +142,10 @@ def registrar_saida(id, c: ProductOperation, u:AuthRes = Depends(auth_handler.au
     product = DB.read_one('products', f"product_id = '{id}'", _json=True)
     if u['user_company'] == product['product_belongs']:
         amount = product['product_amount']
-        transaction = DB.update('products', 'product_amount', amount-int(c.value), f"product_id = '{id}'")
+        if amount - int(c.value) < 0:
+            return Response(400, {"message": "You cannot sell more products than you have"}, True)
+        else:
+            transaction = DB.update('products', 'product_amount', amount-int(c.value), f"product_id = '{id}'")
     
     if transaction == 0: 
         fuso_horario = timezone(timedelta(hours=-3))

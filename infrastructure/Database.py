@@ -1,5 +1,12 @@
 from application.exceptions import Exept
+from decouple import config
+import os
 import psycopg2
+
+if os.getenv("ENV"):
+    ENV = os.getenv("ENV")
+else:
+    ENV = config("ENV")
 
 class Database:
     
@@ -9,7 +16,10 @@ class Database:
         self.db_host = db_host
         self.db_password = db_password
         self.data_fetched = None
-        self.conn = psycopg2.connect(database=self.db_name, user=self.db_user, host=self.db_host, password=self.db_password, sslmode='require')
+        if ENV == 'prod':
+            self.conn = psycopg2.connect(database=self.db_name, user=self.db_user, host=self.db_host, password=self.db_password, sslmode='require')
+        if ENV == 'dev':
+            self.conn = psycopg2.connect(database=self.db_name, user=self.db_user, host=self.db_host, password=self.db_password)
 
     def insert(self, table, data):
         with self.conn:
