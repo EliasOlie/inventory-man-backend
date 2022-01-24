@@ -4,7 +4,8 @@ from .auth_route import auth_handler
 from application.models.ApiCompany import ApiCompany, CompanyOperation
 from application.models.ApiAuthSchema import AuthRes
 from application.models.Company import Company
-from application.models.Response import Response, INVALID_CREDENTIALS
+from application.models.Response import Response
+from application.exceptions.Messages import *
 from infrastructure.DB import DB
 
 router = APIRouter(
@@ -17,7 +18,7 @@ def create_company(c:ApiCompany):
     this_company = Company(c.name, c.email, c.cnpj, c.address)
     transaction = DB.insert('company', this_company.db_repr())
     if transaction != 0:
-        return Response(400, {"MSG": "Something went wrong :/"})
+        return BAD_REQUEST
     return Response(201)
 
 @router.get('/')
@@ -33,35 +34,34 @@ def read_company(c: AuthRes = Depends(auth_handler.auth_wrapper)):
         if transaction:
             employees = DB.read_one('iuser', f"user_name = '{c['user_name']}'", 'user_id, user_name, user_role, is_active', True)
             return Response(200, {"Company": transaction, "Employees": [employees], "Products": products, "History":hist, "User":user})
-            
-        return Response(400, {"MSG": "Company not found, or you're not logged"}, error=True)
+        return UNAUNTHORIZED
     except(AttributeError, TypeError):
-        return INVALID_CREDENTIALS
+        return UNAUNTHORIZED
 
 @router.get('/delete')
 def delete_company(c: AuthRes = Depends(auth_handler.auth_wrapper)):
     try:
         if c['user_role'] == 'Dono':
             transaction = DB.delete('company', f"company_name = '{c['user_company']}' cascade")
+            if transaction != 0:
+                return BAD_REQUEST
+            return Response(200)
         else:
-            return Response(403, {"MSG": "You don't have access to this resource"}, True)
-        if transaction != 0:
-            return Response(400, {"MSG": "Company not found, or you're not logged"}, True)
-        return Response(200)
+            return UNAUNTHORIZED
     except(AttributeError, TypeError):
-        return INVALID_CREDENTIALS
+        return UNAUNTHORIZED
     
 @router.put('/settings')
-def update_company(c:CompanyOperation, C: AuthRes = Depends(auth_handler.auth_wrapper)):
+def update_company(c:CompanyOperation, r: AuthRes = Depends(auth_handler.auth_wrapper)):
     try:
-        if C['user_role'] == 'Dono':
-            transaction = DB.update('company', c.field, c.value, f"company_name = '{C['user_company']}'")
+        if r['user_role'] == 'Dono':
+            transaction = DB.update('company', c.field, c.value, f"company_name = '{r['user_company']}'")
         else:
-            return Response(403, {"MSG": "You don't have access to this resource"}, True)
+            return UNAUNTHORIZED
         if transaction != 0:
-            return Response(400, {"MSG": "Something went wrong :/"}, True)
+            return BAD_REQUEST
         
         return Response(200)
     except(AttributeError, TypeError):
-        return INVALID_CREDENTIALS
+        return UNAUNTHORIZED
     

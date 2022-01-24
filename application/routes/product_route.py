@@ -7,6 +7,7 @@ from application.models.ApiProduct import ApiProduct, ProductOperation
 from application.models.Response import Response
 from application.models.Product import Product
 from application.routes.auth_route import auth_handler
+from application.exceptions.Messages import *
 from infrastructure.DB import DB
 
 router = APIRouter(
@@ -28,7 +29,7 @@ def create_product(p:ApiProduct, c: AuthRes = Depends(auth_handler.auth_wrapper)
     data = json.dumps(data)
     history = DB.create_user('producthist',data)    
     if transaction != 0 or history != 0:
-        return Response(400, {"MSG": "Something went wront :/"}, True)   
+        return BAD_REQUEST   
     return Response(201)
 
 @router.get('/')
@@ -36,14 +37,14 @@ def list_products(c: AuthRes = Depends(auth_handler.auth_wrapper)):
     transaction = DB.read('products', f"product_belongs = '{c['user_company']}'", _json=True)
     if transaction:
         return Response(200, transaction)
-    return Response(400, 'No registred products, or resource not found', True)
+    return BAD_REQUEST
 
 @router.get('/product/{id}')
 def read_product(id,c: AuthRes = Depends(auth_handler.auth_wrapper)):
     transaction = DB.read_one('products', f"product_id = '{id}'", _json=True)
     if transaction and transaction['product_belongs'] == c['user_company']:
         return Response(200, transaction)
-    return Response(400, error=True)
+    return BAD_REQUEST
 
 @router.get('/delete/{id}')
 def delete_product(id, c: AuthRes = Depends(auth_handler.auth_wrapper)):
@@ -54,7 +55,7 @@ def delete_product(id, c: AuthRes = Depends(auth_handler.auth_wrapper)):
         if c['user_company'] == data['product_belongs']:
             transaction = DB.delete('products', f"product_id = '{id}'")
             if transaction != 0:
-                return Response(400, {"MSG": "Product not found"}, True)
+                return NOT_FOUND
             data['created_at'] = date
             data['product_price'] = str(data['product_price'])
             data['modified_by'] = c['user_name']
@@ -62,16 +63,16 @@ def delete_product(id, c: AuthRes = Depends(auth_handler.auth_wrapper)):
             data = json.dumps(data)
             hist = DB.create_user('producthist', data)
             if hist != 0:
-                return Response(500, {"msg","Something goes wrong :/"}, True)
+                return BAD_REQUEST
         return Response(200)
-    return Response(403, {"msg": "You dont have access to this resource"}, True)
+    return UNAUNTHORIZED
 
 def hand(table,field, value, j):
     try:
         transaction = DB.read_one(table, f"{field} = '{value}'", _json=j)
         return transaction
     except Exception as e:
-        return Response(500, e)
+        return BAD_REQUEST
 
 @router.put('/product/settings')
 def update_product(c:ProductOperation, t: AuthRes = Depends(auth_handler.auth_wrapper)):
@@ -82,7 +83,7 @@ def update_product(c:ProductOperation, t: AuthRes = Depends(auth_handler.auth_wr
         if transaction == 0:
             data = hand('products', c.field, c.value, True)
             if type(data) == Exception:
-                return Response(500, {"msg","Something goes wrong :/"}, True)
+                return BAD_REQUEST
             data['created_at'] = date
             data['product_price'] = str(data['product_price'])
             data['modified_by'] = t['user_name']
@@ -90,18 +91,18 @@ def update_product(c:ProductOperation, t: AuthRes = Depends(auth_handler.auth_wr
             data = json.dumps(data)
             hist = DB.create_user('producthist', data)
             if hist != 0:
-                return Response(500, {"msg","Something goes wrong :/"}, True)
+                return BAD_REQUEST
             return Response(200)
         else:
-            return Response(400, {"MSG": "Product not found"}, True)
-    return Response(403, {"msg": "You dont have access to this resource"}, True)
+            return NOT_FOUND
+    return UNAUNTHORIZED
 
 @router.post('/product')
 def get_product_by_name(c: ProductOperation, u:AuthRes = Depends(auth_handler.auth_wrapper)):
-        transaction = DB.read_one('products', f"product_name = '{c.value}' and product_belongs = '{u['user_company']}'", _json=True)
-        if transaction:
-            return Response(200, transaction)    
-        return Response(400, error=True)
+    transaction = DB.read_one('products', f"product_name = '{c.value}' and product_belongs = '{u['user_company']}'", _json=True)
+    if transaction:
+        return Response(200, transaction)    
+    return UNAUNTHORIZED
     
 @router.get('/history')
 def get_history(u:AuthRes = Depends(auth_handler.auth_wrapper)):
@@ -109,7 +110,7 @@ def get_history(u:AuthRes = Depends(auth_handler.auth_wrapper)):
     if transaction:
         return Response(200, {"Response":transaction})
     else:
-        return Response(500, error=True)
+        return BAD_REQUEST
 
 @router.post('/product/{id}/entry') #<- Bugando atualizando todos :p
 def registrar_entrada(id, c: ProductOperation, u:AuthRes = Depends(auth_handler.auth_wrapper)):
@@ -123,7 +124,7 @@ def registrar_entrada(id, c: ProductOperation, u:AuthRes = Depends(auth_handler.
         date = datetime.now().astimezone(fuso_horario).strftime('%Y/%m/%d')
         data = hand('products', 'product_id', id, True)
         if type(data) == Exception:
-            return Response(500, {"msg","Something goes wrong :/"}, True)
+            return BAD_REQUEST
         data['created_at'] = date
         data['product_price'] = str(data['product_price'])
         data['product_amount'] = c.value
@@ -133,10 +134,10 @@ def registrar_entrada(id, c: ProductOperation, u:AuthRes = Depends(auth_handler.
         hist = DB.create_user('producthist', data)
         if hist != 0:
             DB.rb()
-            return Response(500, {"msg","Something goes wrong :/"}, True)
+            return BAD_REQUEST
         return Response(200)
     else:
-        return Response(500, {"msg","Something goes wrong :/"}, True)
+        return BAD_REQUEST
     
 @router.post('/product/{id}/output')
 def registrar_saida(id, c: ProductOperation, u:AuthRes = Depends(auth_handler.auth_wrapper)):
@@ -153,7 +154,7 @@ def registrar_saida(id, c: ProductOperation, u:AuthRes = Depends(auth_handler.au
         date = datetime.now().astimezone(fuso_horario).strftime('%Y/%m/%d')
         data = hand('products', 'product_id', id, True)
         if type(data) == Exception:
-            return Response(500, {"msg","Something goes wrong :/"}, True)
+            return BAD_REQUEST
         data['created_at'] = date
         data['product_price'] = str(data['product_price'])
         data['product_amount'] = c.value
@@ -163,8 +164,7 @@ def registrar_saida(id, c: ProductOperation, u:AuthRes = Depends(auth_handler.au
         hist = DB.create_user('producthist', data)
         if hist != 0:
             DB.rb()
-            return Response(500, {"msg","Something goes wrong :/"}, True)
+            return BAD_REQUEST
         return Response(200)
     else:
-        return Response(500, {"msg","Something goes wrong :/"}, True)
-    
+        return BAD_REQUEST

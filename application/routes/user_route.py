@@ -3,10 +3,11 @@ from datetime import timezone, timedelta, datetime
 
 from application.models.ApiAuthSchema import AuthRes
 from application.models.ApiUser import ApiUser, UserOperation, UserOp
-from application.models.Response import Response, INVALID_CREDENTIALS
+from application.models.Response import Response
 from application.models.User import User
 from application.models.secure import SecurityUtils
 from application.routes.auth_route import auth_handler
+from application.exceptions.Messages import *
 from infrastructure.DB import DB
 
 router = APIRouter(
@@ -19,7 +20,7 @@ def create_user(u:ApiUser):
     this_user = User(u.name, u.email, u.password, u.company, u.role)
     transaction = DB.create_user('iuser', this_user.db_obj_repr())
     if transaction != 0:
-        return Response(400, {"MSG": "Something went wront :/"}, True)
+        return BAD_REQUEST
     
     return Response(201)
 
@@ -30,7 +31,7 @@ def read_user(u: AuthRes = Depends(auth_handler.auth_wrapper)):
         transaction.pop('user_password')
         if len(transaction) >= 1:
             return Response(200, transaction)
-        return Response(400, {"MSG":"User Not Found"}, error=True)
+        return NOT_FOUND
     
     except (AttributeError, TypeError):
         return INVALID_CREDENTIALS
@@ -44,7 +45,7 @@ def read_specific_user(id, u: AuthRes = Depends(auth_handler.auth_wrapper)):
             
             if len(transaction) >= 1:
                 return Response(200, transaction)
-        return Response(400, {"MSG":"User Not Found"}, error=True)
+        return NOT_FOUND
     
     except (AttributeError, TypeError):
         return INVALID_CREDENTIALS
@@ -55,10 +56,10 @@ def delete_user(id, u: AuthRes = Depends(auth_handler.auth_wrapper)):
         if u['user_role'] == 'Dono':
             transaction = DB.delete('iuser', f"user_id = '{id}'")
             if transaction != 0:
-                return Response(400, {"MSG": "User not found"}, True)    
+                return NOT_FOUND   
             return Response(200)
         else:
-            return Response(403)
+            return UNAUNTHORIZED
     except(AttributeError, TypeError):
         return INVALID_CREDENTIALS
     
@@ -69,9 +70,9 @@ def delete_user(c: UserOperation,u: AuthRes = Depends(auth_handler.auth_wrapper)
         if u['user_role'] == 'Dono':
             DB.delete('iuser', f"user_id = '{c['user_deletion']}'")
         else:
-            return Response(403, {"MSG": "You don't have access to this resource"}, True)
+            return UNAUNTHORIZED
         if transaction != 0:
-            return Response(400, {"MSG": "User not found"}, True)
+            return NOT_FOUND
         
         return Response(200)
     except(AttributeError, TypeError):
@@ -87,17 +88,17 @@ def update_specific_user(c: UserOp,u: AuthRes = Depends(auth_handler.auth_wrappe
             update = DB.update('iuser', 'modified_at', date, f"user_id = '{u['user_id']}'")
         else: 
             if c.field != 'user_name':
-                return Response(403, {"MSG": "You don't have access to this resource"}, True)
+                return UNAUNTHORIZED
             else:
                 change = DB.update('iuser', c.field, c.value, f"user_id = '{c.id}'")
                 update = DB.update('iuser', 'modified_at', date, f"user_id = '{u['user_id']}'")            
         if change != 0 or update != 0:
-            return Response(400, {"MSG": "User not found"}, True)
+            return NOT_FOUND
         
         return Response(200, {"data": c})
     except Exception as e:
         print(e)
-        return Response(400, {"Error": e})
+        return BAD_REQUEST
     
 @router.put('/settings')
 def update_user(c:UserOperation, u: AuthRes = Depends(auth_handler.auth_wrapper)):
@@ -105,11 +106,11 @@ def update_user(c:UserOperation, u: AuthRes = Depends(auth_handler.auth_wrapper)
     date = datetime.now().astimezone(fuso_horario).strftime('%Y/%m/%d')
     try:
         if c.field == 'user_role' and u['user_role'] != 'Dono':
-            return Response(403, {"MSG": "You don't have access to this resource"}, True)
+            return UNAUNTHORIZED
         transaction = DB.update('iuser', c.field, c.value, f"user_id = '{u['user_id']}'")
         update = DB.update('iuser', 'modified_at', date, f"user_id = '{u['user_id']}'")
         if transaction != 0 or update != 0:
-            return Response(400, {"MSG": "Something went wrong :/"}, True)
+            return BAD_REQUEST
         
         return Response(200)
     except(AttributeError, TypeError):
@@ -121,14 +122,14 @@ def reset_password(c: UserOperation,u: AuthRes = Depends(auth_handler.auth_wrapp
     date = datetime.now().astimezone(fuso_horario).strftime('%Y/%m/%d')    
     verify = DB.login('iuser', u['user_email'])
     if not verify:
-        return Response(400, {"msg": "user not found"}, True)
+        return NOT_FOUND
     if len(verify) == 1:
         if auth_handler.verify_password(c.extra, verify[0]):
             transaction = DB.update('iuser', c.field, SecurityUtils(c.value).get_hashedpsw(), f"user_id = '{u['user_id']}'")
             update = DB.update('iuser', 'modified_at', date, f"user_id = '{u['user_id']}'")
             if transaction != 0 or update != 0:
-                return Response(500, {"msg": "Something went wrong, sorry :/"}, True)
+                return BAD_REQUEST
             else:
                 return Response(200)
         else:
-            return Response(403, {"MSG": "Invalid Credentials"}, True)
+            return UNAUNTHORIZED

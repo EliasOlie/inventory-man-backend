@@ -8,9 +8,6 @@ class Response():
 
     def __repr__(self):
         return json.dumps({"data":self.data, "status": self.status, "error": self.error})
-
-INVALID_CREDENTIALS: Response = Response(400, {"msg": "Invalid Credentials"}, True)
-
 ##Sobrescrever a response do proprio fastapi?
 
 if __name__ == '__main__':
