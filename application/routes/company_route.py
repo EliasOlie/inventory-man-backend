@@ -5,7 +5,7 @@ from application.models.ApiCompany import ApiCompany, CompanyOperation
 from application.models.ApiAuthSchema import AuthRes
 from application.models.Company import Company
 from application.models.Response import Response
-from application.exceptions.Messages import *
+from application.exceptions.Messages import BAD_REQUEST, NOT_FOUND, UNAUNTHORIZED
 from infrastructure.DB import DB
 
 router = APIRouter(

@@ -7,7 +7,7 @@ from application.models.Response import Response
 from application.models.User import User
 from application.models.secure import SecurityUtils
 from application.routes.auth_route import auth_handler
-from application.exceptions.Messages import *
+from application.exceptions.Messages import BAD_REQUEST, NOT_FOUND, UNAUNTHORIZED
 from infrastructure.DB import DB
 
 router = APIRouter(

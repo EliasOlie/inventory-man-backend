@@ -7,7 +7,7 @@ from application.models.ApiProduct import ApiProduct, ProductOperation
 from application.models.Response import Response
 from application.models.Product import Product
 from application.routes.auth_route import auth_handler
-from application.exceptions.Messages import *
+from application.exceptions.Messages import BAD_REQUEST, NOT_FOUND, UNAUNTHORIZED
 from infrastructure.DB import DB
 
 router = APIRouter(
@@ -71,7 +71,7 @@ def hand(table,field, value, j):
     try:
         transaction = DB.read_one(table, f"{field} = '{value}'", _json=j)
         return transaction
-    except Exception as e:
+    except Exception:
         return BAD_REQUEST
 
 @router.put('/product/settings')
